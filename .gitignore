@@ -10,3 +10,12 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+
+*.vcxproj
+*.sln
+*.vcxproj.filters
+/x64
+/[Dd]ebug
+/[Rr]elease
+/ANN-Library.dir
+/[Bb]uild

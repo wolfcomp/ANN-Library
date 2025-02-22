@@ -1,10 +1,7 @@
 #pragma once
+#ifndef DllExport
 #define DllExport __declspec(dllexport)
+#endif
+#ifndef ExternCDllExport
 #define ExternCDllExport extern "C" __declspec(dllexport)
-#include <memory>
-
-// predefines
-struct Neuron;
-
-// functions
-DllExport std::shared_ptr<Neuron> createNeuron(double bias, std::vector<double> weights);
+#endif

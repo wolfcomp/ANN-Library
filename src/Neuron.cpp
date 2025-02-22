@@ -3,7 +3,7 @@
 #include <xmmintrin.h>
 #include <smmintrin.h>
 
-void Neuron::calculateN(std::vector<double> input)
+void Neuron::calculateN(const std::vector<double> &input)
 {
     if (input.size() != weights.size())
     {
@@ -18,11 +18,11 @@ void Neuron::calculateN(std::vector<double> input)
 
     auto weightStart = &weights[0];
     auto inputStart = &input[0];
-    auto weightEnd = &weights[weights.size()];
+    auto weightEnd = &weights[weights.size() - 1];
 
     // initialize simd accumulator
     __m128d acc = _mm_setzero_pd();
-    for (; weightStart < weightEnd; weightStart += 4, inputStart += 4)
+    for (; weightStart <= weightEnd; weightStart += 2, inputStart += 2)
     {
         // load 4 doubles from weight
         const auto a = _mm_loadu_pd(weightStart);

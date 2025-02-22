@@ -8,7 +8,7 @@
 
 static std::vector<double> weights = {};
 static std::vector<double> inputs = {};
-constexpr int size = 14;
+constexpr int size = 16058;
 
 static void InitValues(int size)
 {
@@ -62,8 +62,8 @@ static void SIMDMultiply(benchmark::State &state)
         auto acc = _mm_setzero_pd();
         auto weightsStart = &weights[0];
         auto inputsStart = &inputs[0];
-        auto weightsEnd = &weights[weights.size()];
-        for (; weightsStart < weightsEnd; weightsStart += 4, inputsStart += 4)
+        auto weightsEnd = &weights[weights.size() - 1];
+        for (; weightsStart < weightsEnd; weightsStart += 2, inputsStart += 2)
         {
             const auto a = _mm_loadu_pd(weightsStart);
             const auto b = _mm_loadu_pd(inputsStart);

@@ -5,13 +5,6 @@
 #include <algorithm>
 #include <random>
 
-std::vector<std::shared_ptr<ActivationFunction>> NeuralNetwork::activationFunctions = {
-    std::make_shared<ActivationFunction>(),
-    std::make_shared<Relu>(),
-    std::make_shared<Sigmoid>(),
-    std::make_shared<Tanh>(),
-    std::make_shared<LeakyRelu>()};
-
 NeuralNetwork::NeuralNetwork()
 {
     layers = std::vector<std::shared_ptr<Layer>>();
@@ -20,21 +13,23 @@ NeuralNetwork::NeuralNetwork()
 NeuralNetwork::NeuralNetwork(int numLayers, int numNeuronsPerLayer, int numInputs, int numOutputs, double rate, std::shared_ptr<ActivationFunction> activation, std::shared_ptr<ActivationFunction> outputActivation)
 {
     layers = std::vector<std::shared_ptr<Layer>>();
+    layers.reserve(numLayers + 1);
     learningRate = rate;
     // setup input layer
-    layers.push_back(std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation));
-    auto inputLayer = layers[0];
-    for (int i = 0; i < numInputs; i++)
+    auto layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
+    layers.push_back(layer);
+    layer->neurons.reserve(numNeuronsPerLayer);
+    for (int i = 0; i < numNeuronsPerLayer; i++)
     {
         auto neuron = std::make_shared<Neuron>(0, std::vector<double>());
         neuron->weights.resize(numInputs);
-        inputLayer->addNeuron(neuron);
+        layer->addNeuron(neuron);
     }
 
     // setup hidden layers
-    for (int i = 0; i < numLayers; i++)
+    for (int i = 0; i < numLayers - 1; i++)
     {
-        auto layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
+        layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
         layers.push_back(layer);
         layer->neurons.reserve(numNeuronsPerLayer);
         auto prevLayerNeuronCount = layers[i]->neurons.size();
@@ -75,66 +70,51 @@ std::vector<double> NeuralNetwork::calculateOutput(const std::vector<double> &in
 std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const std::vector<double> &output)
 {
     auto calculatedOutput = calculateOutput(input);
-    auto errorDifference = output;
-    // Output Layer Error correction
-    std::transform(errorDifference.begin(), errorDifference.end(), calculatedOutput.begin(), errorDifference.begin(), std::minus<double>());
-    for (auto &difference : errorDifference)
-        difference *= learningRate;
-    auto gradients = layers.back()->calculatedGradients();
-    std::transform(gradients.begin(), gradients.end(), errorDifference.begin(), gradients.begin(), std::multiplies<double>());
-    auto referencedLayer = layers[layers.size() - 2];
-    auto inputs = std::vector<double>(referencedLayer->neurons.size(), 0.0);
-    std::transform(referencedLayer->neurons.begin(), referencedLayer->neurons.end(), inputs.begin(), [](auto &neuron)
-                   { return neuron->output; });
 
-    referencedLayer = layers[layers.size() - 1];
-    for (size_t i = 0; i < referencedLayer->neurons.size(); i++)
+    for (int layerIndex = static_cast<int>(layers.size()) - 1; layerIndex >= 0; layerIndex--)
     {
-        auto &neuron = referencedLayer->neurons[i];
-        for (size_t j = 0; j < neuron->weights.size(); j++)
+        std::vector<double> inputs;
+        if (layerIndex > 0)
         {
-            neuron->weights[j] += errorDifference[i] * inputs[j];
-        }
-        neuron->bias += gradients[i];
-    }
-
-    // Hidden Layer and Input Layer Error correction
-    for (int i = static_cast<int>(layers.size()) - 2; i >= 0; i--)
-    {
-        auto newGradients = layers[i]->calculatedGradients();
-        if (i == 0)
-        {
-            inputs = input;
+            auto nextLayer = layers[layerIndex - 1];
+            inputs.reserve(nextLayer->neurons.size());
+            for (size_t prevNeuronIndex = 0; prevNeuronIndex < nextLayer->neurons.size(); prevNeuronIndex++)
+            {
+                inputs.push_back(nextLayer->neurons[prevNeuronIndex]->output);
+            }
         }
         else
         {
-            referencedLayer = layers[i - 1];
-            inputs = std::vector<double>(referencedLayer->neurons.size(), 0.0);
-            std::transform(referencedLayer->neurons.begin(), referencedLayer->neurons.end(), inputs.begin(), [](auto &neuron)
-                           { return neuron->output; });
+            inputs = input;
         }
-        referencedLayer = layers[i + 1];
-        for (size_t j = 0; j < newGradients.size(); j++)
+        auto currentLayer = layers[layerIndex];
+        for (size_t neuronIndex = 0; neuronIndex < currentLayer->neurons.size(); neuronIndex++)
         {
+            auto &neuron = currentLayer->neurons[neuronIndex];
             double error = 0.0;
-            for (size_t k = 0; k < referencedLayer->neurons.size(); k++)
+            if (layerIndex == layers.size() - 1)
             {
-                error += referencedLayer->neurons[k]->weights[j] * gradients[k];
+                error = output[neuronIndex] - neuron->output;
+                neuron->dN = error * currentLayer->activationFunction->derivative(neuron->N);
+                for (size_t weightIndex = 0; weightIndex < neuron->weights.size(); weightIndex++)
+                {
+                    neuron->weights[weightIndex] += learningRate * error * inputs[weightIndex];
+                }
             }
-            newGradients[j] *= error;
-        }
-        for (auto &difference : newGradients)
-            difference *= learningRate;
-        gradients = newGradients;
-
-        for (size_t j = 0; j < layers[i]->neurons.size(); j++)
-        {
-            auto &neuron = layers[i]->neurons[j];
-            for (size_t k = 0; k < neuron->weights.size(); k++)
+            else
             {
-                neuron->weights[k] += inputs[k] * gradients[j];
+                auto prevLayer = layers[layerIndex + 1];
+                for (size_t prevNeuronIndex = 0; prevNeuronIndex < prevLayer->neurons.size(); prevNeuronIndex++)
+                {
+                    error += prevLayer->neurons[prevNeuronIndex]->weights[neuronIndex] * prevLayer->neurons[prevNeuronIndex]->dN;
+                }
+                neuron->dN = error * currentLayer->activationFunction->derivative(neuron->N);
+                for (size_t weightIndex = 0; weightIndex < neuron->weights.size(); weightIndex++)
+                {
+                    neuron->weights[weightIndex] += learningRate * neuron->dN * inputs[weightIndex];
+                }
             }
-            neuron->bias += gradients[j];
+            neuron->bias += learningRate * neuron->dN;
         }
     }
 

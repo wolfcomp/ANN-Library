@@ -2,13 +2,12 @@
 
 #include <vector>
 #include <memory>
-#include "export.h"
 
 struct Neuron;
 struct Layer;
 class ActivationFunction;
 
-struct DllExport NeuralNetwork
+struct NeuralNetwork
 {
     std::vector<std::shared_ptr<Layer>> layers;
     double learningRate = 0.1;

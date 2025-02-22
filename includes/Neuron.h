@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
-#include "export.h"
 
-struct DllExport Neuron
+struct Neuron
 {
     double bias;
     double output;

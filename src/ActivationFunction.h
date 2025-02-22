@@ -35,8 +35,8 @@ public:
 class DllExport Tanh final : public ActivationFunction
 {
 public:
-    double operator()(double x) override { return tanh(x); };
-    double derivative(double x) override { return 1 - pow(tanh(x), 2); };
+    double operator()(double x) override { return 2.0 / (1 + exp(-2 * x)) - 1; };
+    double derivative(double x) override { return 1 - pow(this->operator()(x), 2); };
 };
 
 class DllExport LeakyRelu final : public ActivationFunction

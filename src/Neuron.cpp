@@ -16,13 +16,13 @@ void Neuron::calculateN(const std::vector<double> &input)
     }
     N = bias;
 
-    auto weightStart = &weights[0];
-    auto inputStart = &input[0];
-    auto weightEnd = &weights[weights.size() - 1];
+    auto weightStart = weights.data();
+    auto inputStart = input.data();
+    auto weightEnd = weights.data() + weights.size();
 
     // initialize simd accumulator
     __m128d acc = _mm_setzero_pd();
-    for (; weightStart <= weightEnd; weightStart += 2, inputStart += 2)
+    for (; weightStart < weightEnd; weightStart += 2, inputStart += 2)
     {
         // load 4 doubles from weight
         const auto a = _mm_loadu_pd(weightStart);

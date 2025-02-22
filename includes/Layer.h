@@ -2,12 +2,11 @@
 
 #include <vector>
 #include <memory>
-#include "export.h"
 
 struct Neuron;
 class ActivationFunction;
 
-struct DllExport Layer
+struct Layer
 {
     std::vector<std::shared_ptr<Neuron>> neurons;
     std::shared_ptr<ActivationFunction> activationFunction;

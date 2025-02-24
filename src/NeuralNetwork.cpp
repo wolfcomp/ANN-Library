@@ -15,40 +15,30 @@ NeuralNetwork::NeuralNetwork(int numLayers, int numNeuronsPerLayer, int numInput
     layers = std::vector<std::shared_ptr<Layer>>();
     layers.reserve(numLayers + 1);
     learningRate = rate;
-    // setup input layer
-    auto layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
-    layers.push_back(layer);
-    layer->neurons.reserve(numNeuronsPerLayer);
-    for (int i = 0; i < numNeuronsPerLayer; i++)
-    {
-        auto neuron = std::make_shared<Neuron>(0, std::vector<double>());
-        neuron->weights.resize(numInputs);
-        layer->addNeuron(neuron);
-    }
 
     // setup hidden layers
-    for (int i = 0; i < numLayers - 1; i++)
+    auto prevLayerNeuronCount = numInputs;
+    for (int i = 0; i < numLayers; i++)
     {
-        layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
+        auto layer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), activation);
         layers.push_back(layer);
         layer->neurons.reserve(numNeuronsPerLayer);
-        auto prevLayerNeuronCount = layers[i]->neurons.size();
         for (int j = 0; j < numNeuronsPerLayer; j++)
         {
             auto neuron = std::make_shared<Neuron>(0, std::vector<double>());
             neuron->weights.resize(prevLayerNeuronCount);
             layer->addNeuron(neuron);
         }
+        prevLayerNeuronCount = numNeuronsPerLayer;
     }
 
     // setup output layer
-    auto lastHiddenLayerNeuronSize = layers.back()->neurons.size();
     auto outputLayer = std::make_shared<Layer>(std::vector<std::shared_ptr<Neuron>>(), outputActivation);
     layers.push_back(outputLayer);
     for (int i = 0; i < numOutputs; i++)
     {
         auto neuron = std::make_shared<Neuron>(0, std::vector<double>());
-        neuron->weights.resize(lastHiddenLayerNeuronSize);
+        neuron->weights.resize(prevLayerNeuronCount);
         outputLayer->addNeuron(neuron);
     }
 
@@ -58,9 +48,8 @@ NeuralNetwork::NeuralNetwork(int numLayers, int numNeuronsPerLayer, int numInput
 
 std::vector<double> NeuralNetwork::calculateOutput(const std::vector<double> &input)
 {
-    auto inputLayer = layers[0];
-    auto outputFromLastLayer = inputLayer->calculateOutput(input);
-    for (int i = 1; i < layers.size(); i++)
+    auto outputFromLastLayer = input;
+    for (int i = 0; i < layers.size(); i++)
     {
         outputFromLastLayer = layers[i]->calculateOutput(outputFromLastLayer);
     }
@@ -90,15 +79,15 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
         auto currentLayer = layers[layerIndex];
         for (size_t neuronIndex = 0; neuronIndex < currentLayer->neurons.size(); neuronIndex++)
         {
-            auto &neuron = currentLayer->neurons[neuronIndex];
+            auto currentNeuron = currentLayer->neurons[neuronIndex];
             double error = 0.0;
             if (layerIndex == layers.size() - 1)
             {
-                error = output[neuronIndex] - neuron->output;
-                neuron->dN = error * currentLayer->activationFunction->derivative(neuron->N);
-                for (size_t weightIndex = 0; weightIndex < neuron->weights.size(); weightIndex++)
+                error = output[neuronIndex] - currentNeuron->output;
+                currentNeuron->dN = error * currentLayer->activationFunction->derivative(currentNeuron->N);
+                for (size_t weightIndex = 0; weightIndex < currentNeuron->weights.size(); weightIndex++)
                 {
-                    neuron->weights[weightIndex] += learningRate * error * inputs[weightIndex];
+                    currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * error;
                 }
             }
             else
@@ -106,15 +95,15 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
                 auto prevLayer = layers[layerIndex + 1];
                 for (size_t prevNeuronIndex = 0; prevNeuronIndex < prevLayer->neurons.size(); prevNeuronIndex++)
                 {
-                    error += prevLayer->neurons[prevNeuronIndex]->weights[neuronIndex] * prevLayer->neurons[prevNeuronIndex]->dN;
+                    error += prevLayer->neurons[prevNeuronIndex]->dN * prevLayer->neurons[prevNeuronIndex]->weights[neuronIndex];
                 }
-                neuron->dN = error * currentLayer->activationFunction->derivative(neuron->N);
-                for (size_t weightIndex = 0; weightIndex < neuron->weights.size(); weightIndex++)
+                currentNeuron->dN = error * currentLayer->activationFunction->derivative(currentNeuron->N);
+                for (size_t weightIndex = 0; weightIndex < currentNeuron->weights.size(); weightIndex++)
                 {
-                    neuron->weights[weightIndex] += learningRate * neuron->dN * inputs[weightIndex];
+                    currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * currentNeuron->dN;
                 }
             }
-            neuron->bias += learningRate * neuron->dN;
+            currentNeuron->bias += learningRate * currentNeuron->dN;
         }
     }
 

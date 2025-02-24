@@ -11,10 +11,10 @@ struct Layer
     std::vector<std::shared_ptr<Neuron>> neurons;
     std::shared_ptr<ActivationFunction> activationFunction;
 
-    Layer() = default;
-    Layer(std::vector<std::shared_ptr<Neuron>> neurons, std::shared_ptr<ActivationFunction> activation) : neurons(neurons), activationFunction(activation) {}
-    ~Layer() = default;
+    Layer();
+    Layer(std::vector<std::shared_ptr<Neuron>> neurons, std::shared_ptr<ActivationFunction> activation);
+    ~Layer();
 
-    void addNeuron(std::shared_ptr<Neuron> neuron) { neurons.push_back(neuron); }
+    void addNeuron(std::shared_ptr<Neuron> neuron);
     std::vector<double> calculateOutput(const std::vector<double> &input);
 };

@@ -16,8 +16,27 @@ void Neuron::calculateN(const std::vector<double> &input)
     }
     N = bias;
 
-    for (int i = 0; i < weights.size(); i++)
+    auto weightStart = weights.data();
+    auto inputStart = input.data();
+    auto weightEnd = weightStart + weights.size();
+
+    // __m128d is a 2 double large vector type used for SIMD instructions
+
+    // initialize accumulator
+    __m128d acc = _mm_setzero_pd();
+    for (; weightStart < weightEnd; weightStart += 2, inputStart += 2)
     {
-        N += weights[i] * input[i];
+        // load 2 doubles from weight and input
+        const auto a = _mm_loadu_pd(weightStart);
+        const auto b = _mm_loadu_pd(inputStart);
+
+        // multiply index 0 with 0 and index 1 with 1
+        const auto dp = _mm_dp_pd(a, b, 0xFF);
+
+        // add result to accumulator
+        acc = _mm_add_pd(acc, dp);
     }
+
+    // convert index 0 of accumulator to double and add to N
+    N += _mm_cvtsd_f64(acc);
 }

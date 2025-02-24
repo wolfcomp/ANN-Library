@@ -28,14 +28,14 @@ public:
     double derivative(double x) override
     {
         double g = this->operator()(x);
-        return g / (1 - g);
+        return g * (1 - g);
     };
 };
 
 class DllExport Tanh final : public ActivationFunction
 {
 public:
-    double operator()(double x) override { return 2.0 / (1 + exp(-2 * x)) - 1; };
+    double operator()(double x) override { return 2.0 / (1 + exp(2 * x)) - 1; };
     double derivative(double x) override { return 1 - pow(this->operator()(x), 2); };
 };
 

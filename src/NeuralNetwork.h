@@ -20,4 +20,5 @@ struct DllExport NeuralNetwork
     std::vector<double> train(const std::vector<double> &input, const std::vector<double> &output);
     void setLearningRate(double rate) { learningRate = rate; }
     void initRandomWeights();
+    double getRandomWeight(double min, double max);
 };

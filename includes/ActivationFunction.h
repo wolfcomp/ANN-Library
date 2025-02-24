@@ -5,7 +5,7 @@
 class ActivationFunction
 {
 public:
-    virtual ~ActivationFunction() = default;
+    virtual ~ActivationFunction();
     virtual double operator()(double x);
     virtual double derivative(double x);
 };

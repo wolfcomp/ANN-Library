@@ -9,8 +9,8 @@ struct Neuron
     double dN;
     std::vector<double> weights;
 
-    Neuron() {}
-    Neuron(double bias, std::vector<double> weights) : bias(bias), weights(weights) {}
+    Neuron();
+    Neuron(double bias, std::vector<double> weights);
 
     void calculateN(const std::vector<double> &input);
 };

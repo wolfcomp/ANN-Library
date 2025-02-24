@@ -4,6 +4,10 @@
 #include "ActivationFunction.h"
 #include <algorithm>
 #include <random>
+#include <iostream>
+
+std::random_device rd;
+std::mt19937 gen(rd());
 
 NeuralNetwork::NeuralNetwork()
 {
@@ -103,7 +107,14 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
                     currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * currentNeuron->dN;
                 }
             }
+            for (auto &weight : currentNeuron->weights)
+            {
+                if (isnan(weight) || isinf(weight))
+                    weight = getRandomWeight(-1.0, 1.0);
+            }
             currentNeuron->bias += learningRate * currentNeuron->dN;
+            if (isnan(currentNeuron->bias) || isinf(currentNeuron->bias))
+                currentNeuron->bias = getRandomWeight(-1.0, 1.0);
         }
     }
 
@@ -112,8 +123,6 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
 
 void NeuralNetwork::initRandomWeights()
 {
-    std::random_device rd;
-    std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(-1.0, 1.0);
 
     for (auto &layer : layers)
@@ -127,4 +136,10 @@ void NeuralNetwork::initRandomWeights()
             neuron->bias = dis(gen);
         }
     }
+}
+
+double NeuralNetwork::getRandomWeight(double min, double max)
+{
+    std::uniform_real_distribution<> dis(min, max);
+    return dis(gen);
 }

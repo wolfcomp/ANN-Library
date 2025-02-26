@@ -88,7 +88,7 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
             if (layerIndex == layers.size() - 1)
             {
                 error = output[neuronIndex] - currentNeuron->output;
-                currentNeuron->dN = error * currentLayer->activationFunction->derivative(currentNeuron->N);
+                currentNeuron->errorGradient = error * currentLayer->activationFunction->derivative(currentNeuron->N);
                 for (size_t weightIndex = 0; weightIndex < currentNeuron->weights.size(); weightIndex++)
                 {
                     currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * error;
@@ -99,12 +99,12 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
                 auto prevLayer = layers[layerIndex + 1];
                 for (size_t prevNeuronIndex = 0; prevNeuronIndex < prevLayer->neurons.size(); prevNeuronIndex++)
                 {
-                    error += prevLayer->neurons[prevNeuronIndex]->dN * prevLayer->neurons[prevNeuronIndex]->weights[neuronIndex];
+                    error += prevLayer->neurons[prevNeuronIndex]->errorGradient * prevLayer->neurons[prevNeuronIndex]->weights[neuronIndex];
                 }
-                currentNeuron->dN = error * currentLayer->activationFunction->derivative(currentNeuron->N);
+                currentNeuron->errorGradient = error * currentLayer->activationFunction->derivative(currentNeuron->N);
                 for (size_t weightIndex = 0; weightIndex < currentNeuron->weights.size(); weightIndex++)
                 {
-                    currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * currentNeuron->dN;
+                    currentNeuron->weights[weightIndex] += learningRate * inputs[weightIndex] * currentNeuron->errorGradient;
                 }
             }
             for (auto &weight : currentNeuron->weights)
@@ -112,7 +112,7 @@ std::vector<double> NeuralNetwork::train(const std::vector<double> &input, const
                 if (isnan(weight) || isinf(weight))
                     weight = getRandomWeight(-1.0, 1.0);
             }
-            currentNeuron->bias += learningRate * currentNeuron->dN;
+            currentNeuron->bias += learningRate * currentNeuron->errorGradient;
             if (isnan(currentNeuron->bias) || isinf(currentNeuron->bias))
                 currentNeuron->bias = getRandomWeight(-1.0, 1.0);
         }

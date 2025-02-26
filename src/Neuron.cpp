@@ -21,6 +21,7 @@ void Neuron::calculateN(const std::vector<double> &input)
     auto weightEnd = weightStart + weights.size();
 
     // __m128d is a 2 double large vector type used for SIMD instructions
+    // for more info see the Intel(R) Intrinsics Guide (https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) for the respective _mm_ instructions
 
     // initialize accumulator
     __m128d acc = _mm_setzero_pd();
@@ -39,4 +40,11 @@ void Neuron::calculateN(const std::vector<double> &input)
 
     // convert index 0 of accumulator to double and add to N
     N += _mm_cvtsd_f64(acc);
+
+    // All of this is the same as:
+    //
+    // for (int i = 0; i < weights.size(); i++)
+    //     N += weights[i] * input[i];
+    //
+    // The method used with _mm_ instructions is just over 100 times faster
 }

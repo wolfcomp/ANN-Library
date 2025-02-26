@@ -6,7 +6,7 @@ struct Neuron
     double bias;
     double output;
     double N;
-    double dN;
+    double errorGradient;
     std::vector<double> weights;
 
     Neuron();
